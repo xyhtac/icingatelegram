@@ -1,0 +1,77 @@
+{
+    "api": {
+        "key": "",
+        "request": {
+            "application_id": "",
+            "application_description": "",
+            "api_key": "",
+            "action": ""
+        }
+    },
+    "telegram": {
+		"host": "",
+		"port": "",
+        "token": "",
+		"url": "",
+		"key": "",
+		"cert": "",
+        "maxConnections": "30"
+    },
+    "defaults": {
+        "verbose": 0,
+        "return-button": 0,
+        "defaultLang": "ru"
+    },
+    "monitoring": {
+        "api_url": "",
+        "username": "",
+        "password": "",
+        "service": { }
+    },
+    "interface": {
+        "language_list": {
+            "en": "🇬🇧 English",
+            "ru": "🇷🇺 Русский"
+        },
+        "button_return": {
+            "en": " ↪  Return back",
+            "ru": " ↪  Вернуться назад"
+        },
+        "session_expired": {
+            "en": " ⚠️  Button expired, repeat your request from the origin group!",
+            "ru": " ⚠️  Кнопка устарела, повторите запрос из группы!"
+        },
+        "unknown_service": {
+            "en": " 🗿  No such service in this chat!",
+            "ru": " 🗿  Нет такого сервиса в этом чате!"
+        },
+        "unknown_chat": {
+            "en": " 🗿  I have nothing to report in this chat. To get information send me /sitrep command from the chat where i send my notifications to.",
+            "ru": " 🗿  Нечего сообщить мне этому чату. Для получения информации отправьте мне команду /sitrep из группы, в которую я присылаю вам уведомления."
+        },
+        "request_failed": {
+            "en": " 🔥  Error retrieving information, please contact administrator.",
+            "ru": " 🔥  Ошибка получения информации, обратитесь к администратору!"
+        },
+        "public_confirm": {
+            "en": " 🚀  USERNAME I confirm your request. Please check your private messages.",
+            "ru": " 🚀  USERNAME Ваш запрос принят. Проверьте личные сообщения."
+        },
+        "welcome_message": {
+            "en": " 🚀  USERNAME Hi there! To get information send me /sitrep command from the chat where i send my notifications to.",
+            "ru": " 🚀  USERNAME Приветствую! Для получения информации отправьте мне команду /sitrep из группы, в которую я присылаю вам уведомления."
+        },
+        "select_service": {
+            "en": "<b> 💠   CHATTITLE</b>\\nUSERNAME select monitoring service section to request information:?",
+            "ru": "<b> 💠   CHATTITLE</b>\\nUSERNAME укажите раздел мониторинга для запроса информации:"
+        },
+        "text_report_header": {
+            "en": "<b> 💠   CHATTITLE</b>\\n<i>SERVICELABEL</i>\\n\\nThis is what I do observe now: <pre>REPORT</pre>",
+            "ru": "<b> 💠   CHATTITLE</b>\\n<i>SERVICELABEL</i>\\n\\nТакую ситуацию наблюдаю я сейчас: <pre>REPORT</pre>"
+        },
+        "image_report_caption": {
+            "en": " 💠   CHATTITLE \\n SERVICELABEL",
+            "ru": " 💠   CHATTITLE \\n SERVICELABEL"
+        }
+    }
+}

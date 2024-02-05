@@ -1,0 +1,249 @@
+// CD pipeline for Jenkins
+// Build and deploy Icingatelegram bot using Docker and tgbot-swarm controller api
+
+// Required jenkins plugins:
+// GitHub, Pipeline Utility Steps
+
+// On jenkins host:
+// 1. Create 'icingatelegram-tgtoken-dev' secret text containing Telegram bot token
+// 2. Create 'icingatelegram-monitoring-dev' secret text containing password for monitoring API. 
+// 3. Make sure 'swarm-apikey-dev', 'swarm-hostname-dev' and 'swarm-sshcred-dev' exist in Jenkins secret store.
+
+pipeline {
+    agent any
+    environment {
+        // General application Configuration
+        VERBOSE = "1"
+        DEPLOY = "dev"
+        RETURN_BUTTON = "1"
+        LANGUAGE = "ru"
+
+        // Application-specific deploy configuration
+		APP_NAME = "icingatelegram-bot"
+        APP_DESCRIPTION = "IcingaTelegram_monitoring_interactive_service"
+        APP_HOME = "icingatelegram"
+		
+        TG_TOKEN = credentials("icingatelegram-tgtoken-${DEPLOY}")            // TG bot token from Jenkins secrets store
+        MONITORING_PASS = credentials("icingatelegram-monitoring-${DEPLOY}")  // Monitoring API password from Jenkins secrets store
+		MONITORING_USER = "icingatelegram"
+		MONITORING_API = "https://icingaweb.yourmonitoringmaster.org:5665/v1/objects/services/"
+
+        // Swarm host-specific deploy configuration
+        API_PORT = "8443"
+        API_PATH = "controller"
+        API_HOST = "0.0.0.0"
+        API_KEY = credentials("swarm-apikey-${DEPLOY}")
+        SWARM_HOSTNAME = credentials("swarm-hostname-${DEPLOY}")    // Swarm node hostname Jenkins secrets store
+        SWARM_SSH_CRED = credentials("swarm-sshcred-${DEPLOY}")     // SSH Passwords for Swarm node from Jenkins secrets store
+
+
+    }
+    
+    stages {
+        stage('Get Swarm Node params') {
+            steps {
+                script {
+                    def request = "https://${SWARM_HOSTNAME}:${API_PORT}/${API_PATH}/update?api-key=${API_KEY}\\&application-id=${APP_NAME}\\&description=${APP_DESCRIPTION}"
+                    def response = sh(script: "curl -X GET -k ${request}", returnStdout: true)   
+                    println(response)
+                    def responseObject = readJSON text: response
+                    env.APP_PATH = "$responseObject.path"
+                    env.APP_PORT = "$responseObject.port"
+                    env.IMAGE_NAME = "$responseObject.docker_image_name"
+                    env.CONTAINER_NAME = "$responseObject.docker_container_name"
+                    env.SSL_CERT = "$responseObject.ssl_certificate"
+                    env.SSL_KEY = "$responseObject.ssl_key"
+                }
+            }
+        }
+        stage('Checkout Code') {
+            steps {
+                git(
+                    url: "https://github.com/xyhtac/icingatelegram",
+                    branch: "${DEPLOY}",
+                    credentialsId: "GH-PAT",
+                    changelog: true,
+                    poll: true
+                )
+                sh 'ls -la'
+            }
+        }
+        stage("Write SSL Certificates") {
+            steps {
+                writeFile(
+                    file: "${APP_HOME}/${APP_NAME}-${DEPLOY}.pem",
+                    text: "${SSL_CERT}".stripIndent()
+                )
+                writeFile(
+                    file: "${APP_HOME}/${APP_NAME}-${DEPLOY}.key",
+                    text: "${SSL_KEY}".stripIndent()
+                )
+            }
+        }
+        stage("Generate service config") {
+            steps {
+                writeFile(
+                    file: "${APP_HOME}/config/local-${DEPLOY}.json",
+                    text: """\
+                        {
+                            "defaults": {
+                                "verbose": ${VERBOSE},
+                                "return-button": "${RETURN_BUTTON}",
+                                "defaultLang": "${LANGUAGE}"
+                            },
+                            "telegram": {
+                                "host": "${API_HOST}",
+                                "port": "${APP_PORT}",
+                                "token": "${TG_TOKEN}",
+                                "url": "https://${SWARM_HOSTNAME}:${API_PORT}/${APP_PATH}",
+                                "key": "${APP_NAME}-${DEPLOY}.key",
+                                "cert": "${APP_NAME}-${DEPLOY}.pem"
+                            },
+                            "monitoring": {
+                                "api_url": "${MONITORING_API}",
+                                "username": "${MONITORING_USER}",
+                                "password": "${MONITORING_PASS}",
+                                "service": {
+                                    "-1234567891234": {
+                                        "_alias": "Administrative Tech Group",
+                                        "routers": {
+                                            "name": {
+                                                "en": "⚙️  Network Routers ",
+                                                "ru": "⚙️  Сетевые Маршрутизаторы"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleProject!services-network-routers"
+                                        },
+                                        "wifi": {
+                                            "name": {
+                                                "en": "🎚️  WiFi Hotspots",
+                                                "ru": "🎚️  WiFi Точки доступа"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleProject!services-wifi-hotspots"
+                                        },
+                                        "servers": {
+                                            "name": {
+                                                "en": "⚙️  Servers - Hardware",
+                                                "ru": "⚙️  Серверы - Оборудование"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleProject!project-servers-hardware"
+                                        },
+                                        "power": {
+                                            "name": {
+                                                "en": "🔌  Power Supply",
+                                                "ru": "🔌  Электропитание"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleProject!services-project-ups-all"
+                                        },
+                                        "printers": {
+                                            "name": {
+                                                "en": "🖨️  Printers",
+                                                "ru": "🖨️  Принтеры"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleProject!services-office-printers-toner"
+                                        },
+                                        "cpuload": {
+                                            "name": {
+                                                "en": "🧊  CPU Load",
+                                                "ru": "🧊  Загрузка ЦП"
+                                            },
+                                            "type": "image",
+                                            "endpoint": "http://graph.yourmonitoringmaster.org/S/a"
+                                        },
+                                        "memory": {
+                                            "name": {
+                                                "en": "🧊  RAM Usage",
+                                                "ru": "🧊  Использование ОЗУ"
+                                            },
+                                            "type": "image",
+                                            "endpoint": "http://graph.yourmonitoringmaster.org/S/b"
+                                        }
+                                    },
+                                    "-3210987654327": {
+                                        "_alias": "Private Tech Group",
+                                        "server": {
+                                            "name": {
+                                                "en": "⚙️  Server summary",
+                                                "ru": "⚙️  Обзор сервера"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleServer!host-all"
+                                        },
+                                        "health": {
+                                            "name": {
+                                                "en": "⚙️  Health",
+                                                "ru": "⚙️  Здоровье"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleServer!host-nrpe"
+                                        }
+                                    }
+                                }
+                            },
+                            "interface": {
+                                
+                            }
+                        }
+                    """.stripIndent()
+                )
+            }
+        }
+        stage("Generate Dockerfile") {
+            steps {
+                writeFile(
+                    file: "${APP_HOME}/Dockerfile",
+                    text: """\
+                        FROM node:10
+                        WORKDIR /app
+                        COPY package.json .
+                        COPY package-lock.json .
+                        COPY ${APP_NAME}-${DEPLOY}.key .
+                        COPY ${APP_NAME}-${DEPLOY}.pem .
+                        RUN npm install
+                        COPY . ./
+                        EXPOSE ${APP_PORT}/tcp
+                        CMD ["node", "index.js"]
+                    """.stripIndent()
+                )
+            }
+        }
+        stage ("Recreate and deploy Docker container") {
+            steps {
+                // package code
+                sh "tar -czvf deploy-package.tgz ${APP_HOME}"
+
+                // perform next steps on remote swarm node via ssh
+                script {
+                    // define ssh client
+                    def remote = [:]
+                    remote.name = "${APP_NAME}-${DEPLOY}"
+                    remote.host = "${SWARM_HOSTNAME}"
+                    remote.user = 'jenkins'
+                    remote.password = "${SWARM_SSH_CRED}"
+                    remote.allowAnyHosts = true
+
+                    // transfer code to swarm and unpack it
+                    stage("Transfer application code") {
+                        sshPut remote: remote, from: 'deploy-package.tgz', into: '/opt/jenkins'
+                        sshCommand remote: remote, command: "cd /opt/jenkins && tar -xzvf deploy-package.tgz"
+                    }
+                    stage("Generate Docker image") {
+                        sshCommand remote: remote, command: "cd /opt/jenkins/${APP_HOME} && docker build -t ${IMAGE_NAME} ."
+                        sshCommand remote: remote, command: "rm /opt/jenkins/${APP_HOME} -rf"
+                        sshCommand remote: remote, command: "rm /opt/jenkins/deploy-package.tgz -f"
+                    }
+                    stage ("Restart Docker container") {
+                        sshCommand remote: remote, command: "docker stop ${CONTAINER_NAME} || true && docker rm ${CONTAINER_NAME} -f || true"
+                        sshCommand remote: remote, command: "docker run -d -p ${APP_PORT}:${APP_PORT} -e NODE_ENV=${DEPLOY} --restart unless-stopped --name ${CONTAINER_NAME} ${IMAGE_NAME}"
+                        sshCommand remote: remote, command: "docker image prune -f && docker image ls && docker ps"
+                        sshCommand remote: remote, command: "docker exec ${CONTAINER_NAME} ls -la"
+                    }
+                }
+            }
+        }
+    }
+}

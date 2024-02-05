@@ -1,0 +1,19 @@
+{
+  "name": "icingatelegram-bot",
+  "version": "1.0.0",
+  "description": "IcingaTelegram webhook controller",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Max Fischer",
+  "license": "MIT",
+  "dependencies": {
+    "base-64": "^1.0.0",
+    "config": "^3.3.9",
+    "crypto": "^1.0.1",
+    "fs": "0.0.1-security",
+    "node-fetch": "^2.0.0",
+    "telebot": "^1.4.1"
+  }
+}
