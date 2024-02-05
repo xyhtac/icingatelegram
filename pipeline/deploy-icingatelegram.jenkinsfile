@@ -1,10 +1,11 @@
 // CD pipeline for Jenkins
-// Build and deploy Icingatelegram bot using Docker and tgbot-swarm controller api
+// Build and deploy Icingatelegram bot using Docker and tgbot-swarm controller api 
+// https://github.com/xyhtac/tgbot-swarm
 
-// Required jenkins plugins:
+// Required Jenkins plugins:
 // GitHub, Pipeline Utility Steps
 
-// On jenkins host:
+// On Jenkins host:
 // 1. Create 'icingatelegram-tgtoken-dev' secret text containing Telegram bot token
 // 2. Create 'icingatelegram-monitoring-dev' secret text containing password for monitoring API. 
 // 3. Make sure 'swarm-apikey-dev', 'swarm-hostname-dev' and 'swarm-sshcred-dev' exist in Jenkins secret store.
@@ -23,8 +24,8 @@ pipeline {
         APP_DESCRIPTION = "IcingaTelegram_monitoring_interactive_service"
         APP_HOME = "icingatelegram"
 		
-        TG_TOKEN = credentials("icingatelegram-tgtoken-${DEPLOY}")            // TG bot token from Jenkins secrets store
-        MONITORING_PASS = credentials("icingatelegram-monitoring-${DEPLOY}")  // Monitoring API password from Jenkins secrets store
+        TG_TOKEN = credentials("icingatelegram-tgtoken-${DEPLOY}")            // TG bot token from Jenkins secret store
+        MONITORING_PASS = credentials("icingatelegram-monitoring-${DEPLOY}")  // Monitoring API password from Jenkins secret store
 		MONITORING_USER = "icingatelegram"
 		MONITORING_API = "https://icingaweb.yourmonitoringmaster.org:5665/v1/objects/services/"
 
@@ -33,8 +34,8 @@ pipeline {
         API_PATH = "controller"
         API_HOST = "0.0.0.0"
         API_KEY = credentials("swarm-apikey-${DEPLOY}")
-        SWARM_HOSTNAME = credentials("swarm-hostname-${DEPLOY}")    // Swarm node hostname Jenkins secrets store
-        SWARM_SSH_CRED = credentials("swarm-sshcred-${DEPLOY}")     // SSH Passwords for Swarm node from Jenkins secrets store
+        SWARM_HOSTNAME = credentials("swarm-hostname-${DEPLOY}")    // Swarm node hostname Jenkins secret store
+        SWARM_SSH_CRED = credentials("swarm-sshcred-${DEPLOY}")     // SSH Passwords for Swarm node from Jenkins secret store
 
 
     }
