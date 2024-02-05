@@ -1,0 +1,15 @@
+[Unit]
+Description=index.js - icingatelegram bot frontend
+Documentation=https://github.com/xyhtac/icingatelegram
+After=network.target
+
+[Service]
+Environment=NODE_PORT=443
+Environment=NODE_ENV=dev
+Environment=NODE_CONFIG_DIR=/opt/icingatelegram/icingatelegram
+Type=simple
+ExecStart=/usr/bin/node /opt/icingatelegram/icingatelegram/index.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
