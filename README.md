@@ -27,9 +27,39 @@ After completing these steps, you’ve successfully established a solid foundati
 
 The bot interacts with your users directly through private chats. However, to initiate a conversation, users must first send a `/sitrep` request from the corresponding group to which they belong. The underlying assumption is that all group members have access to a specific set of icinga services that you define in your configuration file. The group ID obtained from the initial request is utilized by the bot to determine the available dataset for the user and generate a session token. And you can focus on delivering specific monitoring data to specific group ID on request and the Telegram will take care of the access control.
 
-### Configuration file.
-```
+### Service configuration.
+Buttons are configured by the `monitoring > service` section of config. First-level object defines a supergroup ID, second-level objects are action buttons, *_alias* is a mnemonic field for group description. Buttons are described by `name` object that stores button strings in all supported languages, `type` ('text' or 'image') helps to distinguish text outputs and images, while `endpoint` holds a link to service or image.
 
+```json
+"service": {
+    "-1004567891234": {
+        "_alias": "Administrative Tech Group",
+        "routers": {
+            "name": {
+                "en": "⚙️  Network Routers ",
+                "ru": "⚙️  Сетевые Маршрутизаторы"
+            },
+            "type": "text",
+            "endpoint": "SampleProject!services-network-routers"
+        },
+        "servers": {
+            "name": {
+                "en": "⚙️  Servers - Hardware",
+                "ru": "⚙️  Серверы - Оборудование"
+            },
+            "type": "text",
+            "endpoint": "SampleProject!project-servers-hardware"
+        },
+        "cpuload": {
+            "name": {
+                "en": "🧊  CPU Load",
+                "ru": "🧊  Загрузка ЦП"
+            },
+            "type": "image",
+            "endpoint": "http://graph.yourmonitoringmaster.org/S/a"
+        }
+    }
+}
 ```
 
 ### Installation with tgbot-swarm.
