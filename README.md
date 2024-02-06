@@ -1,4 +1,3 @@
-![Interactive Telegram bot as Icinga monitoring frontend](/img/bot_interface.jpg?raw=true "icingatelegram - TG monitoring front-end")
 
 
 [![icingatelegram-1.0](https://img.shields.io/badge/dev-icingatelegram_1.0-7a00b9)](https://github.com/xyhtac/icingatelegram/releases/tag/v.1.0)
@@ -23,7 +22,7 @@ Find your message in the update list and copy ID of the supergroup. Now, edit `t
 
 ### Interactive requests.
 After completing these steps, you’ve successfully established a solid foundation for an interactive monitoring front-end based on Telegram. The next step involves updating our notifications bot to make it interactive. Icingatelegram connects with the Telegram API, acting as a webhook server, and interfaces with your icinga API to fetch monitoring data. 
-
+![Interactive Telegram bot as Icinga monitoring frontend](/img/bot_interface.jpg?raw=true "icingatelegram - TG monitoring front-end")
 The bot interacts with your users directly through private chats. However, to initiate a conversation, users must first send a */sitrep* request from the corresponding group to which they belong. The underlying assumption is that all group members have access to a specific set of icinga services that you define in your configuration file. The group ID obtained from the initial request is utilized by the bot to determine the available dataset for the user and generate a session token. Now you can focus on delivering specific monitoring data to specific group ID on request and the Telegram will take care of the access control.
 
 
