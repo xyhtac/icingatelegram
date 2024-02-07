@@ -118,8 +118,11 @@ icingatelegram-tgtoken-dev:  telegram-bot-token
 6. Create new Jenkins pipeline and point it to `deploy-icingatelegram.jenkinsfile` in your repo.
 7. Run the pipeline.
 
-Note: icingatelegram stores session ID in the state memory, so your users will need to ask for access from the notification group after each time you run the build pipeline.
+---
+**NOTE**
+*icingatelegram* stores session ID in the state memory, so your users will need to ask for access from the notification group after each time you run the build pipeline.
 
+---
 
 
 ### Installation as systemd (CentOS).
@@ -199,8 +202,9 @@ systemctl start icingatelegram
 Configuring your Telegram bot with individual buttons for each monitoring service might not be the most efficient approach, as your infrastructure is likely to comprise numerous services. The rule of thumb is to limit the amount of buttons to a maximum of ten to fit an average device screen.
 
 The only effective workaround is to introduce aggregated services into your icinga configuration. *Icingatelegram* comes with a set of predefined [aggregation services](/conf.d/aggregation-services.conf) that will help you to combine check results of hosts and services into one concatenated output, just like this:
-```markdown
-**Plugin Output**
+```
+PLUGIN OUTPUT
+
  OK: SERVICE DETAILS:
  * C_​BAK (snmp)​:
 ✅ snmp_​Disk C: Usage percent OK - 23 % 
@@ -237,8 +241,12 @@ The only effective workaround is to introduce aggregated services into your icin
 ```
 conf.d/aggregation-services.conf > /etc/icinga2/conf.d/
 ```
-Note: By default the aggregated service always return ‘Ok’ status ignoring all statuses of listed services. This is done to avoid notifications generation by the dummy host. If you prefer the listed service state to be propagated to the dummy host, uncomment state calculation blocks.
 
+---
+**NOTE**
+By default the aggregated service always return ‘Ok’ status ignoring all statuses of listed services. This is done to avoid notifications generation by the dummy host. If you prefer the listed service state to be propagated to the dummy host, uncomment state calculation blocks.
+
+---
 2. Add sample-project.conf to your Icinga configuration. Change project name, rename hostgroups according to your environment:
 ```
 conf.d/sample-project.conf > /etc/icinga2/conf.d/
