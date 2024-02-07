@@ -169,7 +169,7 @@ nano /opt/icingatelegram/icingatelegram/config/local-dev.json
         "username": "icingatelegram",
         "password": "icinga-api-secret-password",
         "service": {
-            -YOUR BUTTONS CONFIG-
+            [YOUR BUTTONS CONFIGURATION](#service-configuration)
         }
     },
     "interface": {
