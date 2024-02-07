@@ -17,7 +17,12 @@ Next, go to [@BotFather](https://web.telegram.org/k/#@BotFather), set new bot na
 ```
 https://api.telegram.org/[TELEGRAM_BOT_TOKEN]/getUpdates
 ```
-Find your message in the update list and copy ID of the supergroup. Now, edit `telegram-notifications.conf` and replace `TELEGRAM_BOT_TOKEN` with your bot token and `TELEGRAM_GROUP_ID` with the ID of your supergroup.
+Find your message in the update list and copy ID of the supergroup. Now, edit `telegram-notifications.conf` and replace `TELEGRAM_BOT_TOKEN` with your bot token and `TELEGRAM_GROUP_ID` with the ID of your supergroup. Also, create new [API user](https://icinga.com/docs/icinga-2/latest/doc/12-icinga2-api/) on your icinga master host by adding a section to the `/etc/icinga2/conf.d/api-users.conf`:
+```
+object ApiUser "icingatelegram" {
+  password = "icinga-api-secret-password"
+}
+```
 
 
 ### Interactive requests.
@@ -25,10 +30,10 @@ After completing these steps, you’ve successfully established a solid foundati
 
 ![Interactive Telegram bot as Icinga monitoring frontend](/img/bot_interface.jpg?raw=true "icingatelegram - TG monitoring front-end")
 
-The bot interacts with your users directly through private chats. However, to initiate a conversation, users must first send a `/sitrep` request from the corresponding group to which they belong. The underlying assumption is that all group members have access to a specific set of icinga services that you define in your configuration file. The group ID obtained from the initial request is utilized by the bot to determine the available dataset for the user and generate a session token. And you can focus on delivering specific monitoring data to specific group ID on request and the Telegram will take care of the access control.
+The bot interacts with your users directly through private chats. However, to initiate a conversation, users must first send a `/sitrep` request from the corresponding group to which they belong. The underlying assumption is that all group members have access to a specific set of icinga services that you define in your configuration file. The group ID obtained from the initial request is utilized by the bot to determine the available dataset for the user and generate a session token. You can focus on delivering specific monitoring data to specific group ID on request and the Telegram will take care of the access control.
 
 ### Service configuration.
-Buttons are configured by the `monitoring > service` section of config. First-level object defines a supergroup ID, second-level objects are action buttons, *_alias* is a mnemonic field for group description. Buttons are described by `name` object that stores button strings in all supported languages, `type` ('text' or 'image') helps to distinguish text outputs and images, while `endpoint` holds a link to service or image.
+Buttons are configured in the `monitoring > service` section of config. First-level object defines a supergroup ID, second-level objects are action buttons, *_alias* is a mnemonic field for group description. Buttons are described by `name` object that stores captions in all supported languages, `type` ('text' or 'image') helps to distinguish text outputs and images, while `endpoint` holds a link to service or image.
 
 ```json
 "service": {
@@ -63,6 +68,52 @@ Buttons are configured by the `monitoring > service` section of config. First-le
 ```
 
 ### Installation with tgbot-swarm.
+*icingatelegram* is designed to be deployed as Docker app with [tgbot_swarm](https://github.com/xyhtac/tgbot-swarm) controller. To make it happen, follow these steps:
+
+1. Prepare you tgbot_swarm node according to the [manual](https://github.com/xyhtac/tgbot-swarm/blob/prod/README.md).
+2. Make your own clone of this repo.
+3. Edit `pipeline/deploy-icingatelegram.jenkinsfile` according with you environment:
+```groovy
+environment {
+        // General application Configuration
+        VERBOSE = "1"
+        DEPLOY = "dev"
+        RETURN_BUTTON = "1"
+        LANGUAGE = "ru"
+
+        // Application-specific deploy configuration
+        APP_NAME = "icingatelegram-bot"
+        APP_DESCRIPTION = "IcingaTelegram_monitoring_interactive_service"
+        APP_HOME = "icingatelegram"
+        // Telegram bot token from Jenkins secret store
+        TG_TOKEN = credentials("icingatelegram-tgtoken-${DEPLOY}")
+        // Monitoring API password from Jenkins secret store
+        MONITORING_PASS = credentials("icingatelegram-monitoring-${DEPLOY}") 
+        MONITORING_USER = "icingatelegram"
+        MONITORING_API = "https://icingaweb.yourmonitoringmaster.org:5665/v1/objects/services/"
+
+        // Swarm host-specific deploy configuration
+        API_PORT = "8443"
+        API_PATH = "controller"
+        API_HOST = "0.0.0.0"
+        API_KEY = credentials("swarm-apikey-${DEPLOY}")
+        // Swarm node hostname Jenkins secret store
+        SWARM_HOSTNAME = credentials("swarm-hostname-${DEPLOY}")
+        // SSH Passwords for Swarm node from Jenkins secret store
+        SWARM_SSH_CRED = credentials("swarm-sshcred-${DEPLOY}")
+
+}
+```
+4. Bot configuration is integrated to the deployment pipeline, therefore you should configure your *icingatelegram* in the `Generate service config` stage.
+5. Add Telegram bot token and icinga API login and password to Jenkins secrets storage:
+```
+icingatelegram-monitoring-dev: icinga-api-secret-password
+icingatelegram-tgtoken-dev:  telegram-bot-token
+```
+6. Create new Jenkins pipeline and point it to `deploy-icingatelegram.jenkinsfile` in your repo.
+7. Run the pipeline.
+
+Note: icingatelegram stores session ID in the state memory, so your users will need to ask for access from the notification group after each time you run the build pipeline.
 
 ### Installation as systemd.
 
