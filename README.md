@@ -181,6 +181,7 @@ nano /opt/icingatelegram/icingatelegram/config/local-dev.json
 ```bash
 npm start dev
 ```
+> **_NOTE:_** Check console for errors and use `Ctrl` + `C` to stop Nodejs instance.
 8. Copy systemd service template:
 ```bash
 cp /opt/icingatelegram/scripts/icingatelegram.service /lib/systemd/system/icingatelegram.service
@@ -238,7 +239,7 @@ PLUGIN OUTPUT
 conf.d/aggregation-services.conf > /etc/icinga2/conf.d/
 ```
 
-> **_NOTE:_** By default the aggregated service always return ‘Ok’ status ignoring all statuses of listed services. This is done to avoid notifications generation by the dummy host. If you prefer the listed service state to be propagated to the dummy host, uncomment state calculation blocks.
+> **_NOTE:_** By default the aggregated service always return ‘Ok’ status ignoring all statuses of listed services. This is done to avoid notifications to be originated by the dummy host. If you prefer the listed service state to be propagated to the dummy host, uncomment state calculation blocks.
 
 2. Add sample-project.conf to your Icinga configuration. Change project name, rename hostgroups according to your environment:
 ```
