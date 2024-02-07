@@ -199,7 +199,7 @@ systemctl start icingatelegram
 Configuring your Telegram bot with individual buttons for each monitoring service might not be the most efficient approach, as your infrastructure is likely to comprise numerous services. The rule of thumb is to limit the amount of buttons to a maximum of ten to fit an average device screen.
 
 The only effective workaround is to introduce aggregated services into your icinga configuration. *Icingatelegram* comes with a set of predefined [aggregation services](/conf.d/aggregation-services.conf) that will help you to combine check results of hosts and services into one concatenated output, just like this:
-```
+```markdown
 **Plugin Output**
  OK: SERVICE DETAILS:
  * C_​BAK (snmp)​:
