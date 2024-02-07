@@ -118,11 +118,7 @@ icingatelegram-tgtoken-dev:  telegram-bot-token
 6. Create new Jenkins pipeline and point it to `deploy-icingatelegram.jenkinsfile` in your repo.
 7. Run the pipeline.
 
----
-**NOTE**
-*icingatelegram* stores session ID in the state memory, so your users will need to ask for access from the notification group after each time you run the build pipeline.
-
----
+> **_NOTE:_** *icingatelegram* stores session ID in the state memory, so your users will need to ask for access from the notification group after each time you run the build pipeline.
 
 
 ### Installation as systemd (CentOS).
@@ -242,11 +238,8 @@ PLUGIN OUTPUT
 conf.d/aggregation-services.conf > /etc/icinga2/conf.d/
 ```
 
----
-**NOTE**
-By default the aggregated service always return ‘Ok’ status ignoring all statuses of listed services. This is done to avoid notifications generation by the dummy host. If you prefer the listed service state to be propagated to the dummy host, uncomment state calculation blocks.
+> **_NOTE:_** By default the aggregated service always return ‘Ok’ status ignoring all statuses of listed services. This is done to avoid notifications generation by the dummy host. If you prefer the listed service state to be propagated to the dummy host, uncomment state calculation blocks.
 
----
 2. Add sample-project.conf to your Icinga configuration. Change project name, rename hostgroups according to your environment:
 ```
 conf.d/sample-project.conf > /etc/icinga2/conf.d/
