@@ -7,7 +7,7 @@ The [icingaweb](https://icinga.com/docs/icinga-web/latest/) front-end is powerfu
 
 
 ### Notifications with Telegram Groups.
-Icinga notifications to the Telegram have always worked well because of the popularity of the messenger. There are a variaty of scripts for sending messages out there, pick one of your choice. I do prefer a minimalistic [bash script](https://github.com/lazyfrosch/icinga2-telegram) by *lazyfrosch*, it is also included in this package with minor modifications. Put these files to your icinga master:
+Icinga notifications to the Telegram have always worked well because of the popularity of the messenger. There is a variaty of scripts for sending notifications out there, pick one of your choice. I do prefer a minimalistic [bash script](https://github.com/lazyfrosch/icinga2-telegram) by *lazyfrosch*, it is also included in this package with minor modifications. Put these files to your icinga master:
 ```
 conf.d/telegram-notifications.conf > /etc/icinga2/conf.d/
 scripts/telegram-host-notification.sh > /etc/icinga2/scripts/
@@ -115,7 +115,77 @@ icingatelegram-tgtoken-dev:  telegram-bot-token
 
 Note: icingatelegram stores session ID in the state memory, so your users will need to ask for access from the notification group after each time you run the build pipeline.
 
-### Installation as systemd.
+### Installation as systemd (CentOS).
+If you wish to avoid using Docker and you are generally okay to dedicate port 443 of the host, you may set up icingatelegram as a systemd service on your host:
+1. Install prerequisites:
+```bash
+yum install openssl git nodejs npm nano -y
+```
+2. Choose directory:
+```bash
+cd /opt
+```
+3. Clone repository:
+```bash
+git clone https://github.com/xyhtac/icingatelegram.git
+```
+4. Install Nodejs dependencies:
+```bash
+cd /opt/icingatelegram/icingatelegram
+npm install
+```
+5. Create SSL key and certificate:
+```bash
+openssl req -newkey rsa:2048 -sha256 -nodes -keyout icingatelegram.key -x509 -days 3650 -out icingatelegram.pem -subj "/C=US/ST=New York/L=Brooklyn/O=Callbot /CN=icingatelegram-host-01.ydns.eu"
+```
+6. Create and edit `dev` configuration:
+```bash
+cp /opt/icingatelegram/icingatelegram/config/default.json /opt/icingatelegram/icingatelegram/config/local-dev.json
+nano /opt/icingatelegram/icingatelegram/config/local-dev.json
+```
+```json
+{
+    "defaults": {
+        "verbose": "1",
+        "return-button": "1",
+        "defaultLang": "ru"
+    },
+    "telegram": {
+        "host": "0.0.0.0",
+        "port": "443",
+        "token": "telegram_bot_token",
+        "url": "https://icingatelegram-host-01.ydns.eu:443/",
+        "key": "icingatelegram.key",
+        "cert": "icingatelegram.pem"
+    },
+    "monitoring": {
+        "api_url": "https://icingaweb.yourmonitoringmaster.org:5665/v1/objects/services/",
+        "username": "icingatelegram",
+        "password": "icinga-api-secret-password",
+        "service": {
+            [ YOUR BUTTONS CONFIG ]
+        }
+    },
+    "interface": {
+        [ INTERFACE OVERRIDE ]       
+    }
+}
+```
+7. Try starting bot service manually:
+```bash
+npm start dev
+```
+8. Copy systemd service template:
+```bash
+cp /opt/icingatelegram/scripts/icingatelegram.service /lib/systemd/system/icingatelegram.service
+```
+9. Enable and run service:
+```bash
+systemctl daemon-reload
+systemctl enable icingatelegram
+systemctl start icingatelegram
+```
+
 
 ### Aggregation Services.
 
