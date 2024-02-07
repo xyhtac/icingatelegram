@@ -1,5 +1,6 @@
 #!/usr/bin/node
 
+// Max.Fischer (c) 2024 - Licensed under M.I.T.
 // https://github.com/xyhtac/icingatelegram
 // icingatelegram > index.js
 

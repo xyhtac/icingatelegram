@@ -1,7 +1,8 @@
 // CD pipeline for Jenkins
-// Build and deploy Icingatelegram bot using Docker and tgbot-swarm controller api 
-// https://github.com/xyhtac/tgbot-swarm
+// Max.Fischer (c) 2024 - Licensed under M.I.T.
+// Updates: https://github.com/xyhtac/icingatelegram
 
+// Build and deploy Icingatelegram bot using Docker and tgbot-swarm (https://github.com/xyhtac/tgbot-swarm) controller api 
 // Required Jenkins plugins:
 // GitHub, Pipeline Utility Steps
 
