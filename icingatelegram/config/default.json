@@ -62,16 +62,16 @@
             "ru": " 🚀  USERNAME Приветствую! Для получения информации отправьте мне команду /sitrep из группы, в которую я присылаю вам уведомления."
         },
         "select_service": {
-            "en": "<b> 💠   CHATTITLE</b>\\nUSERNAME select monitoring service section to request information:?",
-            "ru": "<b> 💠   CHATTITLE</b>\\nUSERNAME укажите раздел мониторинга для запроса информации:"
+            "en": "<b> 💠   CHATTITLE</b>\nUSERNAME select monitoring service section to request information:?",
+            "ru": "<b> 💠   CHATTITLE</b>\nUSERNAME укажите раздел мониторинга для запроса информации:"
         },
         "text_report_header": {
-            "en": "<b> 💠   CHATTITLE</b>\\n<i>SERVICELABEL</i>\\n\\nThis is what I do observe now: <pre>REPORT</pre>",
-            "ru": "<b> 💠   CHATTITLE</b>\\n<i>SERVICELABEL</i>\\n\\nТакую ситуацию наблюдаю я сейчас: <pre>REPORT</pre>"
+            "en": "<b> 💠   CHATTITLE</b>\n<i>SERVICELABEL</i>\n\nThis is what I do observe now: <pre>REPORT</pre>",
+            "ru": "<b> 💠   CHATTITLE</b>\n<i>SERVICELABEL</i>\n\nТакую ситуацию наблюдаю я сейчас: <pre>REPORT</pre>"
         },
         "image_report_caption": {
-            "en": " 💠   CHATTITLE \\n SERVICELABEL",
-            "ru": " 💠   CHATTITLE \\n SERVICELABEL"
+            "en": " 💠   CHATTITLE \n SERVICELABEL",
+            "ru": " 💠   CHATTITLE \n SERVICELABEL"
         }
     }
 }
