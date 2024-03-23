@@ -295,7 +295,7 @@ function getCheckResult( servicePath ) {
             }
         }).then(res => res.json())
         .then(callback => {
-            let checkResult = callback.results[0].attrs.last_check_result.output;
+            let checkResult = callback.results[0].attrs.last_check_result.output.replace(/[\<\>]/g, '');
             resolve (checkResult);
         }).catch(function() {
             reject ("Could not fetch data");
