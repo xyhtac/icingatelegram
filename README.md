@@ -1,7 +1,7 @@
 ### Presenting at IcingaSummit'24 Berlin.
 [![Interactive Telegram bot as Icinga monitoring frontend - Presenting at IcingaSummit'24](img/youtube-cover.png)](http://www.youtube.com/watch?v=uCQ-GEtN7hg "Icingatelegram at IcingaSummit'24")
 
-[![icingatelegram-1.0](https://img.shields.io/badge/dev-icingatelegram_1.12-7a00b9)](https://github.com/xyhtac/icingatelegram/releases/tag/v.1.12)
+[![icingatelegram-1.12](https://img.shields.io/badge/dev-icingatelegram_1.12-7a00b9)](https://github.com/xyhtac/icingatelegram/releases/tag/v.1.12)
 
 
 ### Abstract.
