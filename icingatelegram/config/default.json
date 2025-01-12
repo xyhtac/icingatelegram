@@ -81,8 +81,8 @@
             "ru": " 🚀  USERNAME Приветствую! Для получения информации отправьте мне команду /sitrep из группы, в которую я присылаю вам уведомления."
         },
         "about_message": {
-            "en": "<b>PROJECT monitoring bot.</b> \nPowered by Icingatelegram v.VERSION \nhttps://github.com/xyhtac/icingatelegram",
-            "ru": "<b>PROJECT бот мониторинга.</b> \nПостроен на основе Icingatelegram v.VERSION \nhttps://github.com/xyhtac/icingatelegram"
+            "en": "<b>PROJECT monitoring bot.</b> \nPowered by Icingatelegram v.VERSION \nhttps://github.com/xyhtac/icingatelegram\n\nSupport this project by becoming a stargazer, join as a maintainer or consider donation.",
+            "ru": "<b>PROJECT monitoring bot.</b> \nPowered by Icingatelegram v.VERSION \nhttps://github.com/xyhtac/icingatelegram\n\nSupport this project by becoming a stargazer, join as a maintainer or consider donation."
         },
         "select_service": {
             "en": "<b> 💠   CHATTITLE</b>\nUSERNAME select monitoring service section to request information:?",
