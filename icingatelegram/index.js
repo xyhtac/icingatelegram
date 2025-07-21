@@ -170,6 +170,9 @@ bot.on(/^\/tellme_(.+)/, (msg, props) => {
     let callName = ''; 
     
     let sessionId = props.match[1].replace(/[^0-9a-z]/gm,"");
+
+    if (verbose) { console.log("Session ID: " + sessionId ) };
+    if (verbose) { console.log("Full Session Data: " + sessionData ) };
     
     if ( !sessionData[ sessionId ] ) {
         return bot.sendMessage( msg.from.id, ifString["session_expired"][ defaultLang ], {replyMarkup, parseMode} );
