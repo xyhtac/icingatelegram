@@ -35,7 +35,12 @@ After completing these steps, you’ve successfully established a solid foundati
 
 The bot interacts with your users directly through private chats. However, to initiate a conversation, users must first send a `/sitrep` request from the corresponding group to which they belong. The underlying assumption is that all group members have access to a specific set of icinga services that you define in your configuration file. The group ID obtained from the initial request is utilized by the bot to determine the available dataset for the user and generate a session token. You can focus on delivering specific monitoring data to specific group ID on request and the Telegram will take care of the access control.
 
-
+### Documentation
+[Overview](https://deepwiki.com/xyhtac/icingatelegram/1-overview)
+[Bot Application](https://deepwiki.com/xyhtac/icingatelegram/2-bot-application)
+[Icinga Integration](https://deepwiki.com/xyhtac/icingatelegram/3-icinga-integration)
+[Deployment](https://deepwiki.com/xyhtac/icingatelegram/4-deployment)
+[Development](https://deepwiki.com/xyhtac/icingatelegram/5-development)
 
 ### Service configuration.
 Buttons are configured in the `monitoring > service` section of config. First-level object defines a supergroup ID, second-level objects are action buttons, *_alias* is a mnemonic field for group description. Buttons are described by `name` object that stores captions in all supported languages, `type` ('text' or 'image') helps to distinguish text outputs and images, while `endpoint` holds a link to service or image.
