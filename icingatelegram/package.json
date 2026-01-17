@@ -1,5 +1,5 @@
 {
-  "name": "icingatelegram-bot",
+  "name": "icingatelegram",
   "version": "1.0.0",
   "description": "IcingaTelegram webhook controller",
   "main": "index.js",

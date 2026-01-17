@@ -1,0 +1,122 @@
+// Build bot microservice and push it to registry
+
+pipeline {
+
+    agent any
+
+    parameters {
+        choice(name: 'REGISTRY_TYPE', choices: ['private', 'dockerhub'], description: 'Push image to Docker.io or to the local repo')
+    }
+
+
+    environment {
+
+        PROJECT                         = 'icingatelegram'                          // Project namesace ID
+        OWNER                           = 'xyhtac'                                  // Change if forked
+        PRIVATE_CONTAINER_REGISTRY      = credentials('container-registry-url')     // Undisclosed Local Container Registry
+        
+    }
+    
+
+    stages {
+                
+        stage('Checkout Repo') {
+            steps {
+                script {
+                    git(
+                        url: "https://github.com/${OWNER}/${PROJECT}",
+                        branch: "dev",
+                        changelog: true,
+                        poll: true
+                    )
+                    sh 'ls -la'
+                }
+            }
+        }
+
+        stage('Set Version') {
+            steps {
+                script {
+                    // Get version from Git tag or commit SHA
+                    env.VERSION = sh(script: "git describe --tags --always", returnStdout: true).trim()
+                    echo "Version set to ${env.VERSION}"
+                }
+            }
+        }
+
+        stage('Resolve registry') {
+            steps {
+                script {
+                    if (REGISTRY_TYPE == 'private') {
+                        REGISTRY_CREDENTIALS = 'registry-creds'
+                        CONTAINER_REGISTRY   = PRIVATE_CONTAINER_REGISTRY
+                    } else {
+                        REGISTRY_CREDENTIALS = 'dockerhub-creds'
+                        CONTAINER_REGISTRY   = 'docker.io'
+                    }
+                    echo "Registry type: ${REGISTRY_TYPE}"
+                    echo "Container registry: ${CONTAINER_REGISTRY}"
+                }
+            }
+        }
+
+        stage("Build and commit image") {
+
+            steps {
+                script {
+                    def repo = "${OWNER}/${PROJECT}"
+
+                    def artifact_file = "tags_${PROJECT}_${REGISTRY_TYPE}.txt"
+                    def tmp_file = "${artifact_file}.tmp"
+
+                    def baseTag = "${CONTAINER_REGISTRY}/${repo}:${VERSION}-build${BUILD_NUMBER}"
+                    def baseLatestTag = "${CONTAINER_REGISTRY}/${repo}:latest"
+                    
+                    imageLatestTag = baseLatestTag
+                    imageTag = baseTag
+                    
+                    // --- Build Image ---
+                    sh "cd ${PROJECT} && docker build -t ${imageTag} -t ${imageLatestTag} ."
+
+                    withCredentials([usernamePassword(
+                        credentialsId: "${REGISTRY_CREDENTIALS}",
+                        usernameVariable: 'REG_USER',
+                        passwordVariable: 'REG_PASS'
+                    )]) {
+
+                        // --- Push image ---
+                        sh """
+                            echo "$REG_PASS" | docker login ${CONTAINER_REGISTRY} -u "$REG_USER" --password-stdin
+                            docker push ${imageTag}
+                            docker push ${imageLatestTag}
+                            docker logout ${CONTAINER_REGISTRY}
+                        """
+
+                        sh """
+                            curl -s -u "$REG_USER:$REG_PASS" "https://${CONTAINER_REGISTRY}/v2/${repo}/tags/list" \
+                                | jq -r '.tags // [] | .[]' \
+                                | sed "s#^#${repo}:#" \
+                                > "${tmp_file}"
+                            
+                            cat ${tmp_file}
+
+                            if [ -f "${artifact_file}" ]; then
+                                cat "${artifact_file}" >> "${tmp_file}"
+                            fi
+
+                            sort -u "${tmp_file}" > "${artifact_file}"
+                            rm -f "${tmp_file}"
+                            touch "${artifact_file}"
+                        """
+                    }
+
+                    // Archive global list
+                    archiveArtifacts artifacts: "${artifact_file}", allowEmptyArchive: false
+
+                    // --- Cleanup ---
+                    sh "docker rmi ${imageTag} || true"
+                }
+            }
+        }
+    }
+}
