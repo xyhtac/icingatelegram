@@ -133,13 +133,32 @@ pipeline {
                             passwordVariable: 'ICINGA_PASS'
                         )
                     ]) {
-                        // Compile secret set
-                        secretsStore = """\
-                            BOT_TOKEN=${BOT_TOKEN}
-                            ICINGA_API=${ICINGA_API}
-                            ICINGA_USER=${ICINGA_USER}
-                            ICINGA_PASS=${ICINGA_PASS}
-                        """
+
+                        
+                        // Select free port on host for swarm node deployment
+                        def raw = sh(
+                            script: """
+                            sshpass -p '${HOST_PASS}' ssh -o StrictHostKeyChecking=no ${HOST_USER}@${HOST_NAME} << 'EOF'
+                            set -e
+                            USED_PORTS=\$(ss -lnt | awk 'NR>1 {gsub(/.*:/,"",\$4); print \$4}' | sort -n | uniq)
+                            for ((port=${SWARM_RANGE_START}; port<=${SWARM_RANGE_END}; port++)); do
+                                if ! echo "\$USED_PORTS" | grep -qx "\$port"; then
+                                    echo "\$port"
+                                    exit 0
+                                fi
+                            done
+                            echo "No free port found" >&2
+                            exit 1
+                            EOF
+                            """,
+                            returnStdout: true
+                        ).trim()
+
+                        def lines = raw.readLines().findAll { it?.trim() }
+                        def SWARM_PORT = lines[-1]
+
+                        echo "Selected free port: ${SWARM_PORT}"
+
 
                         // Compile configuration (to be revised in v2)
                         icingatelegramConfig = """\
@@ -240,31 +259,18 @@ pipeline {
                         """
 
 
-                        // Select free port on host for swarm node deployment
-                        def raw = sh(
-                            script: """
-                            sshpass -p '${HOST_PASS}' ssh -o StrictHostKeyChecking=no ${HOST_USER}@${HOST_NAME} << 'EOF'
-                            set -e
-                            USED_PORTS=\$(ss -lnt | awk 'NR>1 {gsub(/.*:/,"",\$4); print \$4}' | sort -n | uniq)
-                            for ((port=${SWARM_RANGE_START}; port<=${SWARM_RANGE_END}; port++)); do
-                                if ! echo "\$USED_PORTS" | grep -qx "\$port"; then
-                                    echo "\$port"
-                                    exit 0
-                                fi
-                            done
-                            echo "No free port found" >&2
-                            exit 1
-                            EOF
-                            """,
-                            returnStdout: true
-                        ).trim()
-
-                        def lines = raw.readLines().findAll { it?.trim() }
-                        def SWARM_PORT = lines[-1]
-
-                        echo "Selected free port: ${SWARM_PORT}"
-
-
+                        // Compile environment variables
+                        secretsStore = """\
+                            BOT_TOKEN=${BOT_TOKEN}
+                            ICINGA_API=${ICINGA_API}
+                            ICINGA_USER=${ICINGA_USER}
+                            ICINGA_PASS=${ICINGA_PASS}
+                            HOST_PORT=${PROXY_PORT}
+                            SWARM_PATH=${SWARM_PATH}
+                            SWARM_PORT=${SWARM_PORT}
+                            VERBOSE=${VERBOSE}
+                            NODE_ENV=${DEPLOY}
+                        """
 
                         sh """
                             sshpass -p '${HOST_PASS}' ssh -o StrictHostKeyChecking=no ${HOST_USER}@${HOST_NAME} '
@@ -294,11 +300,6 @@ EOF
                                     --restart unless-stopped \\
                                     --network ${SWARM_NAMESPACE} \\
                                     --env-file .env \\
-                                    -e HOST_PORT=${PROXY_PORT} \\
-                                    -e SWARM_PATH=${SWARM_PATH} \\
-                                    -e SWARM_PORT=${SWARM_PORT} \\
-                                    -e VERBOSE=${VERBOSE} \\
-                                    -e NODE_ENV=${DEPLOY} \\
                                     -v ${CONFIG_VOLUME}/local-${DEPLOY}.json:/app/config/local-${DEPLOY}.json:ro \\
                                     -v ${SWARM_CERTS}:/app/certs:ro \\
                                     -p ${SWARM_PORT}:${SWARM_PORT}/${env.SERVICE_PROTO}  \\
