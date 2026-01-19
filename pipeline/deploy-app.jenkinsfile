@@ -1,0 +1,320 @@
+// Deploy bot frontend
+
+pipeline {
+
+    agent any
+
+    parameters {
+        choice(name: 'REGISTRY_TYPE', choices: ['private', 'dockerhub'], description: 'Push image to Docker.io or to the local repo')
+        choice(name: 'IMAGE_TAG', choices: ['latest', 'select'], description: 'Deploy latest build or select build on registry')
+        choice(name: 'RUNMODE', choices: ['standalone', 'swarm'], description: 'Run as standalone application or tgbot-swarm payload')
+    }
+    
+
+    environment {
+
+        PROJECT                 = 'icingatelegram'                          // Project namesace ID
+        SERVICE                 = 'sandbox'                                 // Microservice ID
+        OWNER                   = 'xyhtac'                                  // Change if forked
+        CONFIG_VOLUME           = "/opt/${PROJECT}/${SERVICE}"              // Configuration location on deploy host
+        DEPLOY                  = 'dev'                                     // Runtime environment
+
+        RETURN_BUTTON           = '1'                                       // Return button can be disabled
+        CONFIRMATION            = '1'                                       // Group confirmation can be disabled
+        VERBOSE                 = '1'                                       // Console verbosity mode
+        LANGUAGE                = 'en'                                      // Default language
+
+        // Network Configuration
+        PROXY_PORT              = "8443"
+        SWARM_RANGE_START       = "3300"
+        SWARM_RANGE_END         = "3900"
+        SWARM_NAMESPACE         = "tgbot-swarm"
+        SERVICE_PROTO           = "tcp"
+
+
+        // Project secrets
+        BOT_TOKEN                       = credentials("${PROJECT}-${SERVICE}-tgtoken")         // TG Token from Secret store
+        ICINGA_API                      = credentials("${PROJECT}-apiendpoint")                // Icinga API Endpoint
+        ICINGA_CREDENTIALS              = "${PROJECT}-apicreds"                                // Icinga Credentials ID
+        
+        // Deploy environment secrets
+        HOST_NAME                       = credentials("${SWARM_NAMESPACE}-hostname")           // Host name from Jenkins secrets store
+        HOST_CREDENTIALS                = "${SWARM_NAMESPACE}-sshcreds"                        // Host SSH credentials from Jenkins secrets store
+        PRIVATE_CONTAINER_REGISTRY      = credentials('container-registry-url')                // Undisclosed Local Container Registry
+
+        REPOSITORY  = "${OWNER}/${PROJECT}"                                                    // Docker Repository name
+        SWARM_CERTS = "${SWARM_NAMESPACE}-certificates"                                        // SSL Certificates named docker volume
+    }
+
+
+   
+    stages {
+
+        stage('Resolve registry') {
+            steps {
+                script {
+                    if (REGISTRY_TYPE == 'private') {
+                        REGISTRY_CREDENTIALS = 'registry-creds'
+                        CONTAINER_REGISTRY   = PRIVATE_CONTAINER_REGISTRY
+                    } else {
+                        REGISTRY_CREDENTIALS = 'dockerhub-creds'
+                        CONTAINER_REGISTRY   = 'index.docker.io'
+                    }
+                    echo "Registry type: ${REGISTRY_TYPE}"
+                    echo "Container registry: ${CONTAINER_REGISTRY}"
+                }
+            }
+        }
+
+        stage('Generate UUID for Path') {
+            steps {
+                script {
+                    def myUuid = UUID.randomUUID().toString()
+                    echo "Generated UUID: ${myUuid}"
+                    env.SWARM_PATH = myUuid
+                }
+            }
+        }
+
+        stage('Select Image for node:samplebot') {
+            steps {
+                script {
+                    if ( IMAGE_TAG != "latest" ) {
+                        // if BUILD is undefined or has value 'select', get list of tags 
+                        // from repository and ask user to select one.
+                        def registry = "https://${CONTAINER_REGISTRY}"
+
+                        withCredentials([usernamePassword(
+                            credentialsId: "${REGISTRY_CREDENTIALS}",
+                            usernameVariable: 'REG_USER',
+                            passwordVariable: 'REG_PASS'
+                        )]) {
+                            def json = sh(
+                                script: """
+                                    curl -s -u "$REG_USER:$REG_PASS" ${registry}/v2/${REPOSITORY}/tags/list
+                                """,
+                                returnStdout: true
+                            )
+
+                            def tags = new groovy.json.JsonSlurper().parseText(json).tags
+                            if (!tags) tags = ["no-tags-found"]
+
+                            // User picks a tag
+                            env.IMAGE_TAG = input(
+                                id: "TagSelector",
+                                message: "Select image tag for deployment",
+                                parameters: [
+                                    choice(name: 'IMAGE_TAG', choices: tags.join('\n'))
+                                ]
+                            )
+                        }
+                    }
+                    echo "Selected image: ${env.IMAGE_TAG}"
+                }
+            }
+        }
+        stage('Deploy to remote host node:samplebot') {
+            steps {
+                script {
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: "${REGISTRY_CREDENTIALS}",
+                            usernameVariable: 'REG_USER',
+                            passwordVariable: 'REG_PASS'
+                        ),
+                        usernamePassword(
+                            credentialsId: "${HOST_CREDENTIALS}",
+                            usernameVariable: 'HOST_USER',
+                            passwordVariable: 'HOST_PASS'
+                        ),
+                        usernamePassword(
+                            credentialsId: "${ICINGA_CREDENTIALS}",
+                            usernameVariable: 'ICINGA_USER',
+                            passwordVariable: 'ICINGA_PASS'
+                        )
+                    ]) {
+                        // Compile secret set
+                        secretsStore = """\
+                            BOT_TOKEN=${BOT_TOKEN}
+                            ICINGA_API=${ICINGA_API}
+                            ICINGA_USER=${ICINGA_USER}
+                            ICINGA_PASS=${ICINGA_PASS}
+                        """
+
+                        // Compile configuration (to be revised in v2)
+                        icingatelegramConfig = """\
+                        {
+                            "defaults": {
+                                "verbose": ${VERBOSE},
+                                "return-button": "${RETURN_BUTTON}",
+                                "confirmation": "${CONFIRMATION}",
+                                "defaultLang": "${LANGUAGE}",
+                                "project": {
+                                    "name": "${SERVICE}",
+                                    "version": "${IMAGE_TAG}"
+                                }
+                            },
+                            "monitoring": {
+                                "service": {
+                                    "-1234567891234": {
+                                        "_alias": "Administrative Tech Group",
+                                        "routers": {
+                                            "name": {
+                                                "en": "⚙️  Network Routers ",
+                                                "ru": "⚙️  Сетевые Маршрутизаторы"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleProject!services-network-routers"
+                                        },
+                                        "wifi": {
+                                            "name": {
+                                                "en": "🎚️  WiFi Hotspots",
+                                                "ru": "🎚️  WiFi Точки доступа"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleProject!services-wifi-hotspots"
+                                        },
+                                        "servers": {
+                                            "name": {
+                                                "en": "⚙️  Servers - Hardware",
+                                                "ru": "⚙️  Серверы - Оборудование"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleProject!project-servers-hardware"
+                                        },
+                                        "power": {
+                                            "name": {
+                                                "en": "🔌  Power Supply",
+                                                "ru": "🔌  Электропитание"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleProject!services-project-ups-all"
+                                        },
+                                        "printers": {
+                                            "name": {
+                                                "en": "🖨️  Printers",
+                                                "ru": "🖨️  Принтеры"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleProject!services-office-printers-toner"
+                                        },
+                                        "cpuload": {
+                                            "name": {
+                                                "en": "🧊  CPU Load",
+                                                "ru": "🧊  Загрузка ЦП"
+                                            },
+                                            "type": "image",
+                                            "endpoint": "http://graph.yourmonitoringmaster.org/S/a"
+                                        },
+                                        "memory": {
+                                            "name": {
+                                                "en": "🧊  RAM Usage",
+                                                "ru": "🧊  Использование ОЗУ"
+                                            },
+                                            "type": "image",
+                                            "endpoint": "http://graph.yourmonitoringmaster.org/S/b"
+                                        }
+                                    },
+                                    "-3210987654327": {
+                                        "_alias": "Private Tech Group",
+                                        "server": {
+                                            "name": {
+                                                "en": "⚙️  Server summary",
+                                                "ru": "⚙️  Обзор сервера"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleServer!host-all"
+                                        },
+                                        "health": {
+                                            "name": {
+                                                "en": "⚙️  Health",
+                                                "ru": "⚙️  Здоровье"
+                                            },
+                                            "type": "text",
+                                            "endpoint": "SampleServer!host-nrpe"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        """
+
+
+                        // Select free port on host for swarm node deployment
+                        def raw = sh(
+                            script: """
+                            sshpass -p '${HOST_PASS}' ssh -o StrictHostKeyChecking=no ${HOST_USER}@${HOST_NAME} << 'EOF'
+                            set -e
+                            USED_PORTS=\$(ss -lnt | awk 'NR>1 {gsub(/.*:/,"",\$4); print \$4}' | sort -n | uniq)
+                            for ((port=${SWARM_RANGE_START}; port<=${SWARM_RANGE_END}; port++)); do
+                                if ! echo "\$USED_PORTS" | grep -qx "\$port"; then
+                                    echo "\$port"
+                                    exit 0
+                                fi
+                            done
+                            echo "No free port found" >&2
+                            exit 1
+                            EOF
+                            """,
+                            returnStdout: true
+                        ).trim()
+
+                        def lines = raw.readLines().findAll { it?.trim() }
+                        def SWARM_PORT = lines[-1]
+
+                        echo "Selected free port: ${SWARM_PORT}"
+
+
+
+                        sh """
+                            sshpass -p '${HOST_PASS}' ssh -o StrictHostKeyChecking=no ${HOST_USER}@${HOST_NAME} '
+
+                                echo "*** Logging into registry ***"
+                                echo "${REG_PASS}" | docker login ${CONTAINER_REGISTRY} -u "${REG_USER}" --password-stdin
+
+                                echo "*** Pulling image ${IMAGE_TAG} ***"
+                                docker pull ${CONTAINER_REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
+
+                                echo "*** Stopping old container ***"
+                                docker rm -f ${PROJECT}_${SERVICE} || true
+
+                                echo "*** Write config json file ***"
+                                mkdir -p "${CONFIG_VOLUME}" || true && chmod 755 ${CONFIG_VOLUME} || true
+                                cat > ${CONFIG_VOLUME}/local-${DEPLOY}.json <<EOF
+${icingatelegramConfig}
+EOF
+
+                                echo "*** Write temp .env ***"
+                                cat > .env <<EOF
+${secretsStore}
+EOF
+
+                                echo "*** Starting new container ***"
+                                docker run -d --name ${PROJECT}_${SERVICE} \\
+                                    --restart unless-stopped \\
+                                    --network ${SWARM_NAMESPACE} \\
+                                    --env-file .env \\
+                                    -e HOST_PORT=${PROXY_PORT} \\
+                                    -e SWARM_PATH=${SWARM_PATH} \\
+                                    -e SWARM_PORT=${SWARM_PORT} \\
+                                    -e VERBOSE=${VERBOSE} \\
+                                    -e NODE_ENV=${DEPLOY} \\
+                                    -v ${CONFIG_VOLUME}/local-${DEPLOY}.json:/app/config/local-${DEPLOY}.json:ro \\
+                                    -v ${SWARM_CERTS}:/app/certs:ro \\
+                                    -p ${SWARM_PORT}:${SWARM_PORT}/${env.SERVICE_PROTO}  \\
+                                    ${CONTAINER_REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
+
+                                echo "*** Cleanup secrets ***"
+                                shred -u .env || rm -f .env
+
+                                echo "*** Deployment complete ***"
+                            '
+                        """
+
+                    }
+                }
+            }
+        }
+
+    }
+}
