@@ -285,11 +285,16 @@ pipeline {
                                 docker rm -f ${PROJECT}_${SERVICE} || true
 
                                 echo "*** Recreate config json file ***"
-                                mkdir -p "${CONFIG_VOLUME}" || true && chmod 755 ${CONFIG_VOLUME} || true
-                                rm ${CONFIG_VOLUME}/local-${DEPLOY}.json -rf || true
-                                cat > ${CONFIG_VOLUME}/local-${DEPLOY}.json <<EOF
+                                mkdir -p "${CONFIG_VOLUME}" && chmod 755 "${CONFIG_VOLUME}"
+                                TMP_FILE="${CONFIG_VOLUME}/local-${DEPLOY}.json.tmp"
+                                rm -f ".temp-config"
+                                cat > ".temp-config" <<EOF
 ${icingatelegramConfig}
 EOF
+                                mv ".temp-config" "${CONFIG_VOLUME}/local-${DEPLOY}.json"
+                                chmod 640 "${CONFIG_VOLUME}/local-${DEPLOY}.json"
+
+
 
                                 echo "*** Write temp .env ***"
                                 cat > .env <<EOF
