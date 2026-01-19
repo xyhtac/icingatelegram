@@ -1,5 +1,5 @@
 {
-  "name": "icingatelegram-bot",
+  "name": "icingatelegram",
   "version": "1.0.0",
   "description": "IcingaTelegram webhook controller",
   "main": "index.js",
@@ -12,7 +12,7 @@
     "base-64": "^1.0.0",
     "config": "^3.3.9",
     "crypto": "^1.0.1",
-    "fs": "0.0.1-security",
+    "fs-extra": "^11.1.1",
     "node-fetch": "^2.0.0",
     "telebot": "^1.4.1"
   }
