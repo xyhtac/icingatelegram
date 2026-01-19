@@ -284,8 +284,9 @@ pipeline {
                                 echo "*** Stopping old container ***"
                                 docker rm -f ${PROJECT}_${SERVICE} || true
 
-                                echo "*** Write config json file ***"
+                                echo "*** Recreate config json file ***"
                                 mkdir -p "${CONFIG_VOLUME}" || true && chmod 755 ${CONFIG_VOLUME} || true
+                                rm ${CONFIG_VOLUME}/local-${DEPLOY}.json -rf || true
                                 cat > ${CONFIG_VOLUME}/local-${DEPLOY}.json <<EOF
 ${icingatelegramConfig}
 EOF
@@ -300,7 +301,7 @@ EOF
                                     --restart unless-stopped \\
                                     --network ${SWARM_NAMESPACE} \\
                                     --env-file .env \\
-                                    -v ${CONFIG_VOLUME}:/app/config:ro \\
+                                    -v ${CONFIG_VOLUME}/local-${DEPLOY}.json:/app/config/local-${DEPLOY}.json:ro \\
                                     -v ${SWARM_CERTS}:/app/certs:ro \\
                                     -p ${SWARM_PORT}:${SWARM_PORT}/${env.SERVICE_PROTO}  \\
                                     ${CONTAINER_REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
