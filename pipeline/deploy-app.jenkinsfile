@@ -7,7 +7,7 @@ pipeline {
     parameters {
         choice(name: 'REGISTRY_TYPE', choices: ['private', 'dockerhub'], description: 'Push image to Docker.io or to the local repo')
         choice(name: 'IMAGE_TAG', choices: ['latest', 'select'], description: 'Deploy latest build or select build on registry')
-        choice(name: 'RUNMODE', choices: ['standalone', 'swarm'], description: 'Run as standalone application or tgbot-swarm payload')
+        choice(name: 'RUNMODE', choices: ['swarm', 'standalone'], description: 'Run as standalone application or tgbot-swarm payload')
     }
     
 
