@@ -300,7 +300,7 @@ EOF
                                     --restart unless-stopped \\
                                     --network ${SWARM_NAMESPACE} \\
                                     --env-file .env \\
-                                    -v ${CONFIG_VOLUME}/local-${DEPLOY}.json:/app/config/local-${DEPLOY}.json:ro \\
+                                    -v ${CONFIG_VOLUME}:/app/config:ro \\
                                     -v ${SWARM_CERTS}:/app/certs:ro \\
                                     -p ${SWARM_PORT}:${SWARM_PORT}/${env.SERVICE_PROTO}  \\
                                     ${CONTAINER_REGISTRY}/${REPOSITORY}:${IMAGE_TAG}
